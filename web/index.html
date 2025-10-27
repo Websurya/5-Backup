@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EPUB Image Checker</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  form { display: flex; flex-direction: column; gap: 10px; max-width: 500px; }
+  label { font-weight: bold; }
+  input, select { padding: 5px; }
+  button { padding: 10px; font-size: 16px; cursor: pointer; }
+  #report { white-space: pre-wrap; background: #f9f9f9; padding: 10px; margin-top: 20px; border: 1px solid #ccc; }
+</style>
+</head>
+<body>
+<h1>EPUB Image Checker</h1>
+<p>Upload an EPUB file and configure options for validation.</p>
+
+<form id="validateForm" enctype="multipart/form-data">
+  <label>EPUB File:</label>
+  <input type="file" name="epub" accept=".epub" required>
+
+  <label>Original EPUB Folder Path:</label>
+  <input type="text" name="epubBasePath" placeholder="e.g., e:/Epubs/MyBook">
+
+  <label>Pixel Threshold:</label>
+  <input type="number" name="pixelThreshold" value="5600000">
+
+  <label><input type="checkbox" name="includeHtml"> Include HTML (.html/.htm)</label>
+  <label><input type="checkbox" name="includeCss"> Scan CSS</label>
+  <label><input type="checkbox" name="includeSvg"> Scan SVG and embedded CSS</label>
+  <label><input type="checkbox" name="searchAllImages"> Search all images</label>
+  <label><input type="checkbox" name="followOpfManifestOnly"> Restrict to OPF manifest</label>
+
+  <button type="submit">Validate EPUB</button>
+</form>
+
+<h2>Validation Report</h2>
+<pre id="report">Report will appear here...</pre>
+
+<script>
+document.getElementById('validateForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+
+  const params = new URLSearchParams();
+  if (formData.get('epubBasePath')) params.append('epubBasePath', formData.get('epubBasePath'));
+  if (formData.get('pixelThreshold')) params.append('pixelThreshold', formData.get('pixelThreshold'));
+  if (formData.get('includeHtml')) params.append('includeHtml', 'true');
+  if (formData.get('includeCss')) params.append('includeCss', 'true');
+  if (formData.get('includeSvg')) params.append('includeSvg', 'true');
+  if (formData.get('searchAllImages')) params.append('searchAllImages', 'true');
+  if (formData.get('followOpfManifestOnly')) params.append('followOpfManifestOnly', 'true');
+
+  const url = `http://localhost:6000/api/validate?${params.toString()}`;
+  document.getElementById('report').textContent = 'Processing...';
+
+  try {
+    const res = await fetch(url, { method: 'POST', body: formData });
+    const data = await res.json();
+    document.getElementById('report').textContent = data.reportText || 'No report generated.';
+  } catch (err) {
+    document.getElementById('report').textContent = 'Error: ' + err.message;
+  }
+});
+</script>
+</body>
+</html>
